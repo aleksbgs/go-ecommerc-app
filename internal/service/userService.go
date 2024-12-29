@@ -1,32 +1,47 @@
 package service
 
 import (
+	"errors"
+	"fmt"
 	"go-ecommerce-app/internal/domain"
 	"go-ecommerce-app/internal/dto"
-	"log"
+	"go-ecommerce-app/internal/repository"
 )
 
 type UserService struct {
+	Repo repository.UserRepository
 }
 
 func (s UserService) Signup(input dto.UserSignup) (string, error) {
-	//perform some db operation
-	//business logic
 
-	log.Println("Signup", input)
+	user, err := s.Repo.CreateUser(domain.User{
+		Email:    input.Email,
+		Password: input.Password,
+		Phone:    input.Phone,
+	})
 
-	return "this-is-my-token-as-of-now", nil
+	//generate token
+
+	fmt.Println(user)
+
+	userInfo := fmt.Sprintf("%v,%v,%v", user.ID, user.Email, user.UserType)
+
+	return userInfo, err
 }
 
 func (s UserService) findUserByEmail(email string) (*domain.User, error) {
-	//perform some db operation
-	//business logic
 
-	return nil, nil
+	user, err := s.Repo.FindUser(email)
+
+	return &user, err
 }
-func (s UserService) Login(input any) (string, error) {
-
-	return "", nil
+func (s UserService) Login(email string, password string) (string, error) {
+	user, err := s.findUserByEmail(email)
+	if err != nil {
+		return "", errors.New("User not found")
+	}
+	//compare password and generate token
+	return user.Email, nil
 }
 func (s UserService) GetVerificationCode(e domain.User) (int, error) {
 
