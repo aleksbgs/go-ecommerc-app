@@ -6,6 +6,8 @@ import (
 	"go-ecommerce-app/internal/dto"
 	"go-ecommerce-app/internal/helper"
 	"go-ecommerce-app/internal/repository"
+	"log"
+	"time"
 )
 
 type UserService struct {
@@ -50,11 +52,66 @@ func (s UserService) Login(email string, password string) (string, error) {
 	}
 	return s.Auth.GenerateToken(user.ID, user.Email, user.UserType)
 }
-func (s UserService) GetVerificationCode(e domain.User) (int, error) {
+func (s UserService) isVerifiedUser(id uint) bool {
+	currentUser, err := s.Repo.FindUserById(id)
 
-	return 0, nil
+	return err == nil && currentUser.Verified
+}
+
+func (s UserService) GetVerificationCode(e domain.User) (int, error) {
+	// if user is verified
+	if s.isVerifiedUser(e.ID) {
+		return 0, errors.New("user is already verified in method GetVerificationCode")
+	}
+
+	//generate verification code
+
+	code, err := s.Auth.GenerateCode()
+	if err != nil {
+		return 0, err
+	}
+	user := domain.User{
+		Expiry: time.Now().Add(30 * time.Minute),
+		Code:   code,
+	}
+
+	_, err = s.Repo.UpdateUser(e.ID, user)
+	if err != nil {
+		return 0, errors.New("unable to update user")
+	}
+
+	//Send SMS
+
+	//return verification code
+	return code, nil
 }
 func (s UserService) VerifyCode(id uint, code int) error {
+
+	if s.isVerifiedUser(id) {
+		log.Println("User already verified")
+		return errors.New("user is already verified")
+	}
+
+	user, err := s.Repo.FindUserById(id)
+	if err != nil {
+		return err
+	}
+
+	if user.Code != code {
+		return errors.New("verification invalid code")
+	}
+	if !time.Now().Before(user.Expiry) {
+		return errors.New("verification code expired")
+	}
+
+	updateUser := domain.User{
+		Verified: true,
+	}
+
+	_, err = s.Repo.UpdateUser(id, updateUser)
+	if err != nil {
+		return errors.New("unable to verify user")
+	}
 
 	return nil
 }

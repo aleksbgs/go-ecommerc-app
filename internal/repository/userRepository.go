@@ -10,7 +10,7 @@ import (
 
 type UserRepository interface {
 	CreateUser(u domain.User) (domain.User, error)
-	FindUserById(id int) (domain.User, error)
+	FindUserById(id uint) (domain.User, error)
 	FindUser(email string) (domain.User, error)
 	UpdateUser(id uint, u domain.User) (domain.User, error)
 }
@@ -35,7 +35,7 @@ func (r userRepository) CreateUser(usr domain.User) (domain.User, error) {
 
 	return usr, nil
 }
-func (r userRepository) FindUserById(id int) (domain.User, error) {
+func (r userRepository) FindUserById(id uint) (domain.User, error) {
 	var user domain.User
 	err := r.db.First(&user, id).Error
 
@@ -59,7 +59,7 @@ func (r userRepository) FindUser(email string) (domain.User, error) {
 }
 func (r userRepository) UpdateUser(id uint, u domain.User) (domain.User, error) {
 	var user domain.User
-	err := r.db.Model(&user).Clauses(clause.Returning{}).Where("id=", id).Updates(u).Error
+	err := r.db.Model(&user).Clauses(clause.Returning{}).Where("id=?", id).Updates(u).Error
 	if err != nil {
 		log.Printf("Error while updating user: %v", err)
 		return domain.User{}, errors.New("Error while updating user")

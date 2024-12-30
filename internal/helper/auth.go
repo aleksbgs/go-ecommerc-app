@@ -125,6 +125,7 @@ func (a Auth) Authorize(ctx *fiber.Ctx) error {
 	user, err := a.VerifyToken(authHeader[0])
 
 	if err == nil && user.ID > 0 {
+		//set user in context
 		ctx.Locals("user", user)
 		return ctx.Next()
 	} else {
@@ -139,5 +140,11 @@ func (a Auth) Authorize(ctx *fiber.Ctx) error {
 func (a Auth) GetCurrentUser(ctx *fiber.Ctx) domain.User {
 	user := ctx.Locals("user")
 	return user.(domain.User)
+
+}
+
+func (a Auth) GenerateCode() (int, error) {
+
+	return RandomNumber(6)
 
 }

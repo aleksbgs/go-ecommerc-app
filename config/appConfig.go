@@ -21,7 +21,7 @@ func SetupEnv() (cfg AppConfig, err error) {
 	httpPort := os.Getenv("HTTP_PORT")
 
 	if len(httpPort) < 1 {
-		return AppConfig{}, errors.New("env variable HTTP_POST is not set")
+		return AppConfig{}, errors.New("env variable HTTP_PORT is not set")
 	}
 
 	Dsn := os.Getenv("DSN")
