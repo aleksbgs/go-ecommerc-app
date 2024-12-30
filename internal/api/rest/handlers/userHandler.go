@@ -20,29 +20,37 @@ func SetupUserRoutes(rh *rest.RestHandler) {
 	//create an instance of user service & incejt to
 	svc := service.UserService{
 		Repo: repository.NewUserRepository(rh.DB),
+		Auth: rh.Auth,
 	}
 
 	handler := UserHandler{
 		svc: svc,
 	}
 
-	//public endpoints
-	app.Post("/register", handler.Register)
-	app.Post("/login", handler.Login)
+	pubRoutes := app.Group("/users")
+	// Public endpoints
+	pubRoutes.Post("/register", handler.Register)
+	pubRoutes.Post("/login", handler.Login)
 
-	//private endpoints
-	app.Get("/verify", handler.GetVerificationCode)
-	app.Post("/verify", handler.Verify)
-	app.Post("/profile", handler.CreateProfile)
-	app.Get("/Profile", handler.GetProfile)
+	pvtRoutes := pubRoutes.Group("/", rh.Auth.Authorize)
 
-	app.Post("/cart", handler.CreateOrder)
-	app.Get("/cart", handler.GetCart)
+	// Private endpoint
+	pvtRoutes.Get("/verify", handler.GetVerificationCode)
+	pvtRoutes.Post("/verify", handler.Verify)
 
-	app.Get("/order", handler.GetOrders)
-	app.Get("/order/:id", handler.GetOrder)
+	pvtRoutes.Post("/profile", handler.CreateProfile)
+	pvtRoutes.Get("/profile", handler.GetProfile)
+	pvtRoutes.Patch("/profile", handler.UpdateProfile)
 
-	app.Post("/become-seller", handler.BecomeSeller)
+	pvtRoutes.Post("/cart", handler.AddToCart)
+	pvtRoutes.Get("/cart", handler.GetCart)
+
+	pvtRoutes.Post("/order", handler.CreateOrder)
+	pvtRoutes.Get("/order", handler.GetOrders)
+	pvtRoutes.Get("/order/:id", handler.GetOrder)
+
+	pvtRoutes.Post("/become-seller", handler.BecomeSeller)
+
 }
 
 func (h *UserHandler) Register(ctx *fiber.Ctx) error {
@@ -112,8 +120,12 @@ func (u *UserHandler) CreateProfile(ctx *fiber.Ctx) error {
 }
 
 func (u *UserHandler) GetProfile(ctx *fiber.Ctx) error {
+
+	user := u.svc.Auth.GetCurrentUser(ctx)
+
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "get profile",
+		"user":    user,
 	})
 }
 
@@ -149,4 +161,7 @@ func (u *UserHandler) BecomeSeller(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "become a seller",
 	})
+}
+func (h *UserHandler) UpdateProfile(ctx *fiber.Ctx) error {
+	return ctx.Status(http.StatusOK).JSON(&fiber.Map{})
 }
