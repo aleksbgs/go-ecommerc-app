@@ -7,9 +7,12 @@ import (
 )
 
 type AppConfig struct {
-	ServerPort string
-	Dsn        string
-	AppSecret  string
+	ServerPort            string
+	Dsn                   string
+	AppSecret             string
+	TwilioAccountSid      string
+	TwilioAuthToken       string
+	TwilioFromPhoneNumber string
 }
 
 func SetupEnv() (cfg AppConfig, err error) {
@@ -35,6 +38,24 @@ func SetupEnv() (cfg AppConfig, err error) {
 		return AppConfig{}, errors.New("env variable APP_SECRET is not set")
 	}
 
-	return AppConfig{ServerPort: httpPort, Dsn: Dsn, AppSecret: appSecret}, nil
+	TwilioAccountSid := os.Getenv("TWILIO_ACCOUNT_SID")
+	if len(TwilioAccountSid) < 1 {
+		return AppConfig{}, errors.New("env variable TWILIO_ACCOUNT_SID is not set")
+	}
+
+	TwilioAuthToken := os.Getenv("TWILIO_AUTH_TOKEN")
+	if len(TwilioAuthToken) < 1 {
+		return AppConfig{}, errors.New("env variable TWILIO_AUTH_TOKEN is not set")
+	}
+
+	TwilioFromPhoneNumber := os.Getenv("TWILIO_FROM_PHONE_NUMBER")
+	if len(TwilioFromPhoneNumber) < 1 {
+		return AppConfig{}, errors.New("env variable TWILIO_FROM_PHONE_NUMBER is not set")
+	}
+
+	return AppConfig{
+		ServerPort: httpPort, Dsn: Dsn, AppSecret: appSecret,
+		TwilioAccountSid: TwilioAccountSid, TwilioAuthToken: TwilioAuthToken,
+		TwilioFromPhoneNumber: TwilioFromPhoneNumber}, nil
 
 }
