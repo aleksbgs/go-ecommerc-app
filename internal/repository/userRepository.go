@@ -13,6 +13,7 @@ type UserRepository interface {
 	FindUserById(id uint) (domain.User, error)
 	FindUser(email string) (domain.User, error)
 	UpdateUser(id uint, u domain.User) (domain.User, error)
+	CreateBankAccount(e domain.BankAccount) error
 }
 
 type userRepository struct {
@@ -65,4 +66,11 @@ func (r userRepository) UpdateUser(id uint, u domain.User) (domain.User, error) 
 		return domain.User{}, errors.New("Error while updating user")
 	}
 	return user, nil
+}
+func (r userRepository) CreateBankAccount(e domain.BankAccount) error {
+	err := r.db.Create(&e).Error
+	if err != nil {
+		return errors.New("Error while creating bank account")
+	}
+	return err
 }

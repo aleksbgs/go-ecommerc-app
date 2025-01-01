@@ -45,10 +45,10 @@ func SetupUserRoutes(rh *rest.RestHandler) {
 
 	pvtRoutes.Post("/cart", handler.AddToCart)
 	pvtRoutes.Get("/cart", handler.GetCart)
-
-	pvtRoutes.Post("/order", handler.CreateOrder)
 	pvtRoutes.Get("/order", handler.GetOrders)
 	pvtRoutes.Get("/order/:id", handler.GetOrder)
+
+	pvtRoutes.Post("/order", handler.CreateOrder)
 
 	pvtRoutes.Post("/become-seller", handler.BecomeSeller)
 
@@ -190,8 +190,28 @@ func (u *UserHandler) GetOrder(ctx *fiber.Ctx) error {
 }
 
 func (u *UserHandler) BecomeSeller(ctx *fiber.Ctx) error {
+
+	user := u.svc.Auth.GetCurrentUser(ctx)
+
+	req := dto.SellerInput{}
+	err := ctx.BodyParser(&req)
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(&fiber.Map{
+			"message": "please provide a valid input",
+		})
+	}
+
+	token, err := u.svc.BecomeSeller(user.ID, req)
+
+	if err != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(&fiber.Map{
+			"message": "failed to become seller",
+		})
+	}
+
 	return ctx.Status(http.StatusOK).JSON(&fiber.Map{
 		"message": "become a seller",
+		"token":   token,
 	})
 }
 func (h *UserHandler) UpdateProfile(ctx *fiber.Ctx) error {
