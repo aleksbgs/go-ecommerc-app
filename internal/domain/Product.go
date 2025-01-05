@@ -1,14 +1,16 @@
 package domain
 
+import "time"
+
 type Product struct {
-	ID          uint64  `json:"id"`
-	Name        string  `json:"name" gorm:"index;"`
-	Description string  `json:"description"`
-	CategoryId  uint64  `json:"category_id"`
-	ImageURL    string  `json:"image_url"`
-	Price       float64 `json:"price"`
-	UserID      int     `json:"user_id"`
-	Stock       uint    `json:"stock"`
-	CreatedAt   int64   `json:"created_at"`
-	UpdatedAt   int64   `json:"updated_at"`
+	ID          uint      `json:"id" gorm:"PrimaryKey"`
+	Name        string    `json:"name" gorm:"index;"`
+	Description string    `json:"description"`
+	CategoryId  uint      `json:"category_id"`
+	ImageUrl    string    `json:"image_url" `
+	Price       float64   `json:"price"`
+	UserId      int       `json:"user_id"`
+	Stock       uint      `json:"stock"`
+	CreatedAt   time.Time `json:"created_at" gorm:"default:current_timestamp"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"default:current_timestamp"`
 }

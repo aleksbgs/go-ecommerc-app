@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"go-ecommerce-app/internal/api/rest"
+	"go-ecommerce-app/internal/domain"
 	"go-ecommerce-app/internal/dto"
 	"go-ecommerce-app/internal/repository"
 	"go-ecommerce-app/internal/service"
@@ -43,7 +44,7 @@ func SetupCatalogRoutes(rh *rest.RestHandler) {
 	selRoutes.Delete("/categories/:id", handler.DeleteCategory)
 
 	// Products
-	selRoutes.Post("/products", handler.CreateProducts)
+	selRoutes.Post("/products", handler.CreateProduct)
 	selRoutes.Get("/products", handler.GetProducts)
 	selRoutes.Get("/products/:id", handler.GetProduct)
 	selRoutes.Put("/products/:id", handler.EditProduct)
@@ -93,25 +94,85 @@ func (h CatalogHandler) DeleteCategory(ctx *fiber.Ctx) error {
 }
 
 func (h CatalogHandler) CreateProduct(ctx *fiber.Ctx) error {
-	return rest.SuccessResponses(ctx, "create product endpoint", nil)
+
+	req := dto.CreateProductRequest{}
+	err := ctx.BodyParser(&req)
+	if err != nil {
+		return rest.BadRequestError(ctx, "create product request body parse error")
+	}
+	user := h.svc.Auth.GetCurrentUser(ctx)
+	err = h.svc.CreateProduct(req, user)
+	if err != nil {
+		return rest.InternalServerError(ctx, err)
+	}
+
+	return rest.SuccessResponses(ctx, "product create successfully", nil)
 }
 func (h CatalogHandler) GetProducts(ctx *fiber.Ctx) error {
-	return rest.SuccessResponses(ctx, "get products endpoint", nil)
+
+	products, err := h.svc.GetProducts()
+	if err != nil {
+		return rest.ErrorMessage(ctx, 404, err)
+	}
+
+	return rest.SuccessResponses(ctx, "products", products)
 }
 
 func (h CatalogHandler) GetProduct(ctx *fiber.Ctx) error {
-	return rest.SuccessResponses(ctx, "get product endpoint", nil)
+	id, _ := strconv.Atoi(ctx.Params("id"))
+
+	product, err := h.svc.GetProductById(id)
+	if err != nil {
+		return rest.BadRequestError(ctx, "get product by id error")
+	}
+
+	return rest.SuccessResponses(ctx, "product", product)
 
 }
 func (h CatalogHandler) EditProduct(ctx *fiber.Ctx) error {
-	return rest.SuccessResponses(ctx, "edit product endpoint", nil)
+	id, _ := strconv.Atoi(ctx.Params("id"))
+	req := dto.CreateProductRequest{}
+	err := ctx.BodyParser(&req)
+	if err != nil {
+		return rest.BadRequestError(ctx, "create product request body parse error")
+	}
+	user := h.svc.Auth.GetCurrentUser(ctx)
+	product, err := h.svc.EditProduct(id, req, user)
+	if err != nil {
+		return rest.InternalServerError(ctx, err)
+	}
+	return rest.SuccessResponses(ctx, "product edit successfully", product)
+
 }
 func (h CatalogHandler) UpdateStock(ctx *fiber.Ctx) error {
-	return rest.SuccessResponses(ctx, "update stock product endpoint", nil)
+	id, _ := strconv.Atoi(ctx.Params("id"))
+	req := dto.UpdateStockRequest{}
+	err := ctx.BodyParser(&req)
+	if err != nil {
+		return rest.BadRequestError(ctx, "update stock request body parse error")
+	}
+	user := h.svc.Auth.GetCurrentUser(ctx)
+
+	product := domain.Product{
+		ID:     uint(id),
+		Stock:  uint(req.Stock),
+		UserId: int(user.ID),
+	}
+	updatedProduct, err := h.svc.UpdateProductStock(product)
+	if err != nil {
+		return rest.InternalServerError(ctx, err)
+	}
+
+	return rest.SuccessResponses(ctx, "update stock product endpoint", updatedProduct)
 }
 
 func (h CatalogHandler) DeleteProduct(ctx *fiber.Ctx) error {
-	return rest.SuccessResponses(ctx, "delete product endpoint", nil)
+	id, _ := strconv.Atoi(ctx.Params("id"))
+
+	user := h.svc.Auth.GetCurrentUser(ctx)
+	err := h.svc.DeleteProduct(id, user)
+
+	return rest.SuccessResponses(ctx, "delete product endpoint", err)
 
 }
 
@@ -135,8 +196,4 @@ func (h CatalogHandler) GetCategoryById(ctx *fiber.Ctx) error {
 	}
 
 	return rest.SuccessResponses(ctx, "get category endpoint", cat)
-}
-
-func (h CatalogHandler) CreateProducts(ctx *fiber.Ctx) error {
-	return rest.SuccessResponses(ctx, "create products endpoint", nil)
 }
