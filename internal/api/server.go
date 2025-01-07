@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"go-ecommerce-app/config"
 	"go-ecommerce-app/internal/api/rest"
 	"go-ecommerce-app/internal/api/rest/handlers"
@@ -24,12 +25,26 @@ func StartServer(config config.AppConfig) {
 	log.Printf("database connection established successfully")
 
 	//run migration
-	err = db.AutoMigrate(&domain.User{}, &domain.BankAccount{}, &domain.Category{}, &domain.Product{})
+	err = db.AutoMigrate(
+		&domain.User{},
+		&domain.Address{},
+		&domain.BankAccount{},
+		&domain.Category{},
+		&domain.Product{},
+		&domain.Cart{},
+	)
 
 	if err != nil {
 		log.Fatalf("database migration error %v\n", err)
 	}
 	log.Printf("database migration successfully")
+
+	c := cors.New(cors.Config{
+		AllowOrigins: "http://localhost:3030",
+		AllowHeaders: "Content-Type,Accept,Authorization",
+		AllowMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+	})
+	app.Use(c)
 
 	auth := helper.SetupAuth(config.AppSecret)
 
